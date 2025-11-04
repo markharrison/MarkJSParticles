@@ -1,6 +1,6 @@
 {
   "name": "@markharrison/markjsparticles",
-  "version": "1.20251104.1",
+  "version": "1.20251104.2",
   "description": "A reusable ui system for canvas applications.",
   "main": "markjsparticles.js",
   "exports": {
