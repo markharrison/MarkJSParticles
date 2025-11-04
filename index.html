@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MarkJSParticles Test Application</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 20px;
+        background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+        color: #fff;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        overflow-x: auto;
+      }
+
+      h1 {
+        margin: 0 0 30px 0;
+        font-size: 2.5em;
+        text-align: center;
+        background: linear-gradient(45deg, #00d4ff, #ff6b6b);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .canvas-container {
+        margin-bottom: 40px;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        background: rgba(255, 255, 255, 0.05);
+        padding: 20px;
+      }
+
+      canvas {
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        display: block;
+        background: #000;
+        transition: border-color 0.3s ease;
+        position: relative;
+        z-index: 1000;
+        pointer-events: auto;
+        position: relative;
+        z-index: 10;
+        pointer-events: auto;
+      }
+
+      canvas:hover {
+        border-color: rgba(255, 255, 255, 0.4);
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        width: 100%;
+        max-width: 1200px;
+        margin-bottom: 30px;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+      }
+
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        transition: all 0.3s ease;
+      }
+
+      .control-group:hover {
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateY(-2px);
+      }
+
+      label {
+        margin-bottom: 10px;
+        font-weight: 600;
+        color: #e0e0e0;
+        font-size: 0.9em;
+      }
+
+      input,
+      select {
+        width: 100%;
+        padding: 10px 15px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        color: #fff;
+        font-size: 1em;
+        transition: all 0.3s ease;
+        text-align: center;
+      }
+
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: #00d4ff;
+        background: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+      }
+
+      input:hover,
+      select:hover {
+        border-color: rgba(255, 255, 255, 0.4);
+      }
+
+      /* Improve dropdown option readability */
+      select option {
+        background: #333;
+        color: #fff;
+        padding: 5px;
+      }
+
+      /* Ensure selected option is visible */
+      select option:checked {
+        background: #00d4ff;
+        color: #000;
+      }
+
+      button {
+        padding: 15px 30px;
+        background: linear-gradient(45deg, #00d4ff, #0099cc);
+        color: #fff;
+        border: none;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: 1.1em;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      button:hover {
+        background: linear-gradient(45deg, #0099cc, #00d4ff);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 212, 255, 0.4);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      .instructions {
+        text-align: center;
+        margin-top: 20px;
+        color: #ccc;
+        font-size: 0.9em;
+        max-width: 800px;
+      }
+
+      @media (max-width: 768px) {
+        .controls {
+          grid-template-columns: 1fr;
+        }
+
+        h1 {
+          font-size: 2em;
+        }
+
+        .canvas-container {
+          padding: 10px;
+        }
+      }
+      /* Custom color controls: single row of 6 items, wrap on small screens */
+      /* Make the control span the full width of the grid to avoid overlap */
+      /* Visibility of #customColorControls is handled via the `.visible` class */
+      #customColorControls .pairs {
+        display: flex;
+        flex-direction: row;
+        gap: 16px;
+        width: 100%;
+        flex-wrap: nowrap;
+        justify-content: center;
+        align-items: flex-start;
+        overflow-x: auto; /* horizontal fallback if viewport is too narrow */
+        padding-bottom: 4px;
+      }
+      #customColorControls .pairs .pair {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        min-width: 64px;
+        max-width: 88px;
+      }
+      /* Make number inputs a bit more compact */
+      #customColorControls input[type='number'] {
+        padding: 6px 8px;
+        width: 64px;
+        height: 36px;
+        border-radius: 8px;
+        font-size: 0.95em;
+        text-align: center;
+        /* Hide spinners for number inputs (Chrome, Edge, Safari) */
+        -webkit-appearance: none;
+        appearance: textfield;
+        /* Hide spinners for Firefox */
+        /* Firefox uses a different selector */
+        /* Remove arrows in Firefox */
+        /* stylelint-disable-next-line selector-type-no-unknown */
+      }
+      /* Remove arrows in Firefox */
+      /* Smaller labels for the compact control row */
+      #customColorControls .pair label {
+        font-size: 0.78em;
+        color: #d8d8d8;
+        margin-bottom: 2px;
+      }
+      /* Show when JS toggles visibility */
+      #customColorControls.visible {
+        display: flex !important;
+      }
+      /* Hide by default; JS will set inline display when needed */
+      /* Responsive: allow wrapping into multiple lines on narrow viewports */
+      @media (max-width: 700px) {
+        #customColorControls .pairs {
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+        #customColorControls .pairs .pair {
+          min-width: 48%;
+          max-width: none;
+        }
+      }
+      /* Inline layout for custom color inputs placed beside the checkbox */
+      .control-group.inline-pairs {
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+        align-items: flex-end;
+        justify-content: flex-start;
+        padding-bottom: 0;
+      }
+      .control-group.inline-pairs .checkbox-label {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 0;
+        min-width: 140px;
+      }
+      .control-group.inline-pairs .pairs {
+        display: none;
+        flex-direction: row;
+        gap: 8px;
+        align-items: flex-end;
+        margin-bottom: 0;
+        margin-left: 80px;
+      }
+      .control-group.inline-pairs .pairs.visible {
+        display: flex;
+      }
+      .control-group.inline-pairs .pair {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        min-width: 56px;
+        max-width: 72px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>MarkJSParticles Test Application</h1>
+
+    <div class="canvas-container">
+      <canvas id="canvas" width="1280" height="720"></canvas>
+    </div>
+
+    <div class="controls">
+      <div class="control-group">
+        <label for="particlesPerExplosion">Particles per Effect</label>
+        <input type="number" id="particlesPerExplosion" value="30" min="1" max="100" />
+      </div>
+      <div class="control-group">
+        <label for="particlesMinSpeed">Min Speed</label>
+        <input type="number" id="particlesMinSpeed" value="3" min="0" max="20" step="0.1" />
+      </div>
+      <div class="control-group">
+        <label for="particlesMaxSpeed">Max Speed</label>
+        <input type="number" id="particlesMaxSpeed" value="6" min="0" max="20" step="0.1" />
+      </div>
+      <div class="control-group">
+        <label for="particlesMinSize">Min Size</label>
+        <input type="number" id="particlesMinSize" value="1" min="0.1" max="10" step="0.1" />
+      </div>
+      <div class="control-group">
+        <label for="particlesMaxSize">Max Size</label>
+        <input type="number" id="particlesMaxSize" value="6" min="0.1" max="10" step="0.1" />
+      </div>
+      <div class="control-group">
+        <label for="lifetime">Lifetime (seconds, optional)</label>
+        <input type="number" id="lifetime" value="2" min="0.1" step="0.1" />
+      </div>
+      <div class="control-group">
+        <label for="effectType">Effect Type</label>
+        <select id="effectType">
+          <option value="explosion">Explosion</option>
+          <option value="confetti">Confetti</option>
+          <option value="fireworks">Fireworks</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label for="lifetimeJitter">Lifetime jitter</label>
+        <input type="number" id="lifetimeJitter" value="0.5" min="0" max="1" step="0.01" />
+      </div>
+      <div class="control-group">
+        <label for="gravity">Gravity</label>
+        <input type="number" id="gravity" value="0.02" min="-1" max="1" step="0.01" />
+      </div>
+      <div class="control-group">
+        <label for="glowStrengthNumber">Glow Strength</label>
+        <input type="number" id="glowStrengthNumber" min="0" max="5" step="0.1" value="0" />
+      </div>
+      <div class="control-group inline-pairs">
+        <span class="checkbox-label">
+          <input type="checkbox" id="useCustomColors" />
+          <label for="useCustomColors">Use custom colors</label>
+        </span>
+        <div id="customColorControls" class="pairs" aria-hidden="true">
+          <div class="pair">
+            <label for="rMin">rMin</label>
+            <input type="number" id="rMin" value="50" min="0" max="255" />
+          </div>
+          <div class="pair">
+            <label for="rMax">rMax</label>
+            <input type="number" id="rMax" value="100" min="0" max="255" />
+          </div>
+          <div class="pair">
+            <label for="gMin">gMin</label>
+            <input type="number" id="gMin" value="200" min="0" max="255" />
+          </div>
+          <div class="pair">
+            <label for="gMax">gMax</label>
+            <input type="number" id="gMax" value="255" min="0" max="255" />
+          </div>
+          <div class="pair">
+            <label for="bMin">bMin</label>
+            <input type="number" id="bMin" value="0" min="0" max="255" />
+          </div>
+          <div class="pair">
+            <label for="bMax">bMax</label>
+            <input type="number" id="bMax" value="50" min="0" max="255" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom colors: inline pairs will be inserted in the checkbox control-group -->
+
+    <button id="triggerEffect">Trigger Effect at Center</button>
+
+    <script type="module">
+      import { MarkJSParticles } from './markjsparticles.js';
+
+      const canvas = document.getElementById('canvas');
+      const triggerButton = document.getElementById('triggerEffect');
+      const effectTypeSelect = document.getElementById('effectType');
+
+      // Update UI defaults based on selected effect type
+      effectTypeSelect.addEventListener('change', function () {
+        const selectedType = this.value;
+        if (selectedType === 'confetti') {
+          // Set confetti-friendly defaults
+          document.getElementById('particlesPerExplosion').value = '50';
+          document.getElementById('particlesMinSpeed').value = '1';
+          document.getElementById('particlesMaxSpeed').value = '4';
+          document.getElementById('particlesMinSize').value = '2';
+          document.getElementById('particlesMaxSize').value = '8';
+          document.getElementById('lifetime').value = '3'; // 3 seconds for longer confetti lifetime
+          document.getElementById('lifetimeJitter').value = '0.3';
+          document.getElementById('gravity').value = '0.01';
+        } else if (selectedType === 'explosion') {
+          // Set explosion defaults
+          document.getElementById('particlesPerExplosion').value = '30';
+          document.getElementById('particlesMinSpeed').value = '3';
+          document.getElementById('particlesMaxSpeed').value = '6';
+          document.getElementById('particlesMinSize').value = '1';
+          document.getElementById('particlesMaxSize').value = '6';
+          document.getElementById('lifetime').value = '2';
+          document.getElementById('lifetimeJitter').value = '0.5';
+          document.getElementById('gravity').value = '0.02';
+        } else if (selectedType === 'fireworks') {
+          // Fireworks defaults: upward motion then burst
+          document.getElementById('particlesPerExplosion').value = '20';
+          document.getElementById('particlesMinSpeed').value = '5';
+          document.getElementById('particlesMaxSpeed').value = '10';
+          document.getElementById('particlesMinSize').value = '2';
+          document.getElementById('particlesMaxSize').value = '4';
+          document.getElementById('lifetime').value = '2';
+          document.getElementById('lifetimeJitter').value = '0.6';
+          // Negative gravity makes particles initially move upward (handled by library)
+          document.getElementById('gravity').value = '-0.05';
+        }
+      });
+
+      const options = {
+        background: '#222',
+      };
+
+      const pm = new MarkJSParticles(canvas, options);
+
+      // glow strength uses a single numeric input (#glowStrengthNumber)
+
+      // Toggle debug overlay with 'D'
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'd' || e.key === 'D') {
+          pm.debug = !pm.debug;
+          console.log('MarkJSParticles debug:', pm.debug);
+        }
+      });
+
+      // Game loop for updating and rendering particles
+      let lastTime = 0;
+      function gameLoop(currentTime) {
+        const deltaTime = currentTime - lastTime;
+        lastTime = currentTime;
+
+        pm.update(deltaTime);
+        pm.ctx.fillStyle = pm.background;
+        pm.ctx.fillRect(0, 0, pm.canvas.width, pm.canvas.height);
+        pm.render();
+
+        requestAnimationFrame(gameLoop);
+      }
+      requestAnimationFrame(gameLoop);
+
+      function getEffectOptions() {
+        // Always use parseFloat for all numeric values
+        const particlesPerExplosion = parseFloat(document.getElementById('particlesPerExplosion').value);
+        const particlesMinSpeed = parseFloat(document.getElementById('particlesMinSpeed').value);
+        const particlesMaxSpeed = parseFloat(document.getElementById('particlesMaxSpeed').value);
+        const particlesMinSize = parseFloat(document.getElementById('particlesMinSize').value);
+        const particlesMaxSize = parseFloat(document.getElementById('particlesMaxSize').value);
+        const lifetime = parseFloat(document.getElementById('lifetime').value);
+        const lifetimeJitterRaw = document.getElementById('lifetimeJitter').value;
+        console.log('lifetimeJitter raw:', lifetimeJitterRaw);
+        const gravity = parseFloat(document.getElementById('gravity').value);
+        const glowStrengthRaw = document.getElementById('glowStrengthNumber')?.value;
+
+        // Normalize lifetimeJitter
+        let lifetimeJitter = 0.5;
+        if (lifetimeJitterRaw !== '' && lifetimeJitterRaw !== null && lifetimeJitterRaw !== undefined) {
+          const normalized = String(lifetimeJitterRaw).replace(',', '.');
+          const n = parseFloat(normalized);
+          if (!isNaN(n)) lifetimeJitter = n;
+        }
+        console.log('lifetimeJitter parsed:', lifetimeJitter);
+
+        const opts = {
+          particlesPerExplosion,
+          particlesMinSpeed,
+          particlesMaxSpeed,
+          particlesMinSize,
+          particlesMaxSize,
+          gravity: !isNaN(gravity) ? gravity : 0.02,
+          lifetimeJitter,
+          glowStrength: !isNaN(parseFloat(glowStrengthRaw)) ? parseFloat(glowStrengthRaw) : 0,
+        };
+        if (!isNaN(lifetime) && lifetime > 0) {
+          opts.lifetimeMs = lifetime * 1000;
+        }
+
+        // Custom color logic for all effects
+        const useCustomColors = document.getElementById('useCustomColors').checked;
+        if (useCustomColors) {
+          opts.rMin = parseInt(document.getElementById('rMin').value, 10);
+          opts.rMax = parseInt(document.getElementById('rMax').value, 10);
+          opts.gMin = parseInt(document.getElementById('gMin').value, 10);
+          opts.gMax = parseInt(document.getElementById('gMax').value, 10);
+          opts.bMin = parseInt(document.getElementById('bMin').value, 10);
+          opts.bMax = parseInt(document.getElementById('bMax').value, 10);
+        }
+        return opts;
+      }
+
+      function triggerEffect(x, y) {
+        const effectType = effectTypeSelect.value;
+        const effectOptions = getEffectOptions();
+        // Clamp coordinates to canvas bounds
+        const cx = Math.max(0, Math.min(canvas.width, x));
+        const cy = Math.max(0, Math.min(canvas.height, y));
+        console.log('addEffect:', effectType, effectOptions, 'at', {
+          x: cx,
+          y: cy,
+        });
+        if (isNaN(cx) || isNaN(cy)) {
+          // Show error on canvas
+          pm.ctx.save();
+          pm.ctx.fillStyle = '#f00';
+          pm.ctx.font = '24px monospace';
+          pm.ctx.fillText('ERROR: Invalid click coordinates', 32, 64);
+          pm.ctx.restore();
+          return;
+        }
+        pm.addEffect(effectType, [cx, cy], effectOptions);
+      }
+
+      canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
+        console.log('Canvas click:', {
+          x,
+          y,
+          rawX: e.clientX,
+          rawY: e.clientY,
+          rect,
+        });
+        triggerEffect(x, y);
+      });
+
+      triggerButton.addEventListener('click', () => {
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        triggerEffect(centerX, centerY);
+      });
+
+      // Show/hide custom color controls based on checkbox and effect type
+      (function setupCustomColorControls() {
+        const useCustomColorsCheckbox = document.getElementById('useCustomColors');
+        const customColorControls = document.getElementById('customColorControls');
+        if (!useCustomColorsCheckbox || !customColorControls || !effectTypeSelect) return;
+
+        function updateCustomColorVisibility() {
+          if (useCustomColorsCheckbox.checked) {
+            customColorControls.classList.add('visible');
+            customColorControls.setAttribute('aria-hidden', 'false');
+          } else {
+            customColorControls.classList.remove('visible');
+            customColorControls.setAttribute('aria-hidden', 'true');
+          }
+        }
+
+        useCustomColorsCheckbox.addEventListener('change', updateCustomColorVisibility);
+        effectTypeSelect.addEventListener('change', updateCustomColorVisibility);
+        // Ensure correct state on load
+        if (document.readyState === 'loading') {
+          window.addEventListener('DOMContentLoaded', updateCustomColorVisibility);
+        } else {
+          updateCustomColorVisibility();
+        }
+      })();
+    </script>
+  </body>
+</html>

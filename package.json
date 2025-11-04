@@ -1,0 +1,26 @@
+{
+  "name": "@markharrison/markjsparticles",
+  "version": "1.20251103.5",
+  "description": "A reusable ui system for canvas applications.",
+  "main": "markjsparticles.js",
+  "exports": {
+    ".": "./markjsparticles.js",
+    "./markjsparticles": "./markjsparticles.js"
+  },
+  "files": [
+    "markjsparticles.js",
+    "markjsparticles.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/markharrison/MarkJSParticles.git"
+  },
+  "author": "Mark Harrison",
+  "license": "MIT",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  }
+}
